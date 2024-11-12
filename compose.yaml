@@ -1,5 +1,6 @@
 services:
-  postgres:
+  # Production containers
+  postgres-prod:
     image: 'postgres:latest'
     environment:
       - 'POSTGRES_DB=mydatabase'
@@ -7,7 +8,46 @@ services:
       - 'POSTGRES_USER=myuser'
     ports:
       - '5432'
-  redis:
+    profiles:
+      - prod
+
+  redis-prod:
     image: 'redis:latest'
     ports:
       - '6379'
+    profiles:
+      - prod
+
+
+  # Development containers
+  postgres-dev:
+    image: 'postgres:latest'
+    environment:
+      - 'POSTGRES_DB=mydatabase'
+      - 'POSTGRES_PASSWORD=secret'
+      - 'POSTGRES_USER=myuser'
+    ports:
+      - '5432:5432'
+    profiles:
+      - dev
+
+  redis-dev:
+    image: 'redis:latest'
+    ports:
+      - '6379:6379'
+    profiles:
+      - dev
+
+  ldap-dev:
+    image: 'bitnami/openldap:latest'
+    ports:
+      - '1389:1389'
+      #- '1636:1636'
+    environment:
+      - LDAP_ROOT=dc=springframework,dc=org
+      - LDAP_ADMIN_USERNAME=admin
+      - LDAP_ADMIN_PASSWORD=admin
+    volumes:
+      - ./src/test/resources/ldifs:/ldifs
+    profiles:
+      - dev
