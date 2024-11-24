@@ -8,6 +8,8 @@ services:
       - 'POSTGRES_USER=myuser'
     ports:
       - '5432'
+    volumes:
+      - './src/main/resources/db-script/create_script.sql:/docker-entrypoint-initdb.d/init.sql'
     profiles:
       - prod
 
@@ -28,6 +30,8 @@ services:
       - 'POSTGRES_USER=myuser'
     ports:
       - '5432:5432'
+    volumes:
+      - './src/main/resources/db-script/create_script.sql:/docker-entrypoint-initdb.d/init.sql'
     profiles:
       - dev
 
