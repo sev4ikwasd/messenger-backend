@@ -5,10 +5,14 @@ import ru.miit.messenger_backend.entity.UserPrivateKeyEntity;
 import java.util.List;
 
 public interface UserPrivateKeyRepository {
-    public void createUserPrivateKeyEntity(final UserPrivateKeyEntity userPrivateKeyEntity);
-    public UserPrivateKeyEntity getUserPrivateKeyEntity(final int userPrivateKeyId);
-    public void updateUserPrivateKeyEntity(final UserPrivateKeyEntity userPrivateKeyEntity);
-    public void deleteUserPrivateKeyEntity(final int userPrivateKeyId);
-    public List<UserPrivateKeyEntity> getAllUserEntities();
+    void createUserPrivateKeyEntity(final UserPrivateKeyEntity userPrivateKeyEntity);
+
+    UserPrivateKeyEntity getUserPrivateKeyEntity(final int userPrivateKeyId);
+
+    void updateUserPrivateKeyEntity(final UserPrivateKeyEntity userPrivateKeyEntity);
+
+    void deleteUserPrivateKeyEntity(final int userPrivateKeyId);
+
+    List<UserPrivateKeyEntity> getAllUserEntities();
 
 }

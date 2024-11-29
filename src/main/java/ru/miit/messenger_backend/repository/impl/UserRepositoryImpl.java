@@ -38,7 +38,6 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
 
-
     @Override
     public UserEntity getUserEntityById(final int userId) {
         String sql = "SELECT * FROM messenger.user WHERE id = :id";

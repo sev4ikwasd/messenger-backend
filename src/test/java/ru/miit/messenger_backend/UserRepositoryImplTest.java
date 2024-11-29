@@ -12,14 +12,10 @@ import java.util.List;
 
 @SpringBootTest
 public class UserRepositoryImplTest {
-    @Autowired
-    private UserRepositoryImpl userRepository;
-
     private final int DEFAULT_USER_ID = 2;
     private final LocalDateTime DEFAULT_DATE_TIME = LocalDateTime.of(2024, 11, 11, 11, 11);
     private final byte[] DEFAULT_MASTER_PASSWORD_HASH = "masterPasswordHash".getBytes();
     private final byte[] DEFAULT_PROTECTED_SYMMETRIC_KEY = "protectedSymmetricKey".getBytes();
-
     private final UserEntity DEFAULT_USER_ENTITY = UserEntity.builder()
             .id(DEFAULT_USER_ID)
             .uid(2)
@@ -28,6 +24,8 @@ public class UserRepositoryImplTest {
             .protectedSymmetricKey(DEFAULT_PROTECTED_SYMMETRIC_KEY)
 
             .build();
+    @Autowired
+    private UserRepositoryImpl userRepository;
 
     @Test
     public void successCreateUser() {
