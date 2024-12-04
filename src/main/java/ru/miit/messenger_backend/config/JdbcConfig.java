@@ -1,18 +1,15 @@
 package ru.miit.messenger_backend.config;
 
-import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import javax.sql.DataSource;
 
-@AllArgsConstructor
+@Configuration
 public class JdbcConfig {
-
-    private final DataSource dataSource;
-
     @Bean
-    public NamedParameterJdbcTemplate namedParameterJdbcTemplate() {
+    public NamedParameterJdbcTemplate namedParameterJdbcTemplate(DataSource dataSource) {
         return new NamedParameterJdbcTemplate(dataSource);
     }
 }
