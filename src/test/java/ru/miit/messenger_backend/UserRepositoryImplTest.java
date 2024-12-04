@@ -37,21 +37,21 @@ public class UserRepositoryImplTest {
 
                 .build();
 
-        userRepository.createUserEntity(newUser);
+        userRepository.create(newUser);
 
     }
 
     @Test
-    public void successGetUserEntityById() {
+    public void successRead() {
 
-        UserEntity actualUserEntity = userRepository.getUserEntityById(DEFAULT_USER_ID);
+        UserEntity actualUserEntity = userRepository.read(DEFAULT_USER_ID);
 
         Assertions.assertEquals(DEFAULT_USER_ENTITY, actualUserEntity);
     }
 
     @Test
-    public void successUpdateUserEntity() {
-        UserEntity oldUserEntity = userRepository.getUserEntityById(DEFAULT_USER_ID);
+    public void successUpdate() {
+        UserEntity oldUserEntity = userRepository.read(DEFAULT_USER_ID);
 
         Assertions.assertEquals(oldUserEntity, DEFAULT_USER_ENTITY);
 
@@ -64,16 +64,16 @@ public class UserRepositoryImplTest {
 
                 .build();
 
-        userRepository.updateUserEntity(newUserEntity);
+        userRepository.update(newUserEntity);
 
-        UserEntity expectedUserEntity = userRepository.getUserEntityById(DEFAULT_USER_ID);
+        UserEntity expectedUserEntity = userRepository.read(DEFAULT_USER_ID);
 
         Assertions.assertEquals(expectedUserEntity, newUserEntity);
     }
 
     @Test
-    public void successDeleteUserEntity() {
-        userRepository.deleteUserEntity(DEFAULT_USER_ID);
+    public void successDelete() {
+        userRepository.delete(DEFAULT_USER_ID);
     }
 
     @Test

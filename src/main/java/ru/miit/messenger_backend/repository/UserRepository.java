@@ -1,17 +1,16 @@
 package ru.miit.messenger_backend.repository;
 
-import ru.miit.messenger_backend.entity.UserEntity;
-
-import java.util.List;
+import ru.miit.messenger_backend.dto.response.PreKeyBundle;
+import ru.miit.messenger_backend.dto.response.UserVault;
 
 public interface UserRepository {
-    void createUserEntity(final UserEntity userEntity);
+    int getIdByUid(final String uid);
 
-    UserEntity getUserEntityById(final int userId);
+    //TODO user info
 
-    void updateUserEntity(final UserEntity userEntity);
+    PreKeyBundle getPreKeyBundle(final int userId);
 
-    void deleteUserEntity(final int userId);
+    UserVault getUserVault(final int userId);
 
-    List<UserEntity> getAllUserEntities();
+    void updateUserVault(final int userId, byte[] vaultUpdate);
 }

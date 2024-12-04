@@ -1,12 +1,11 @@
 package ru.miit.messenger_backend.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 
 import java.security.Principal;
 
-@Getter
-@AllArgsConstructor
+@Data
 public class User implements Principal {
-    private final String name;
+    private String uid;
+    private String name;
 }
