@@ -1,9 +1,11 @@
 package ru.miit.messenger_backend.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.ldap.core.LdapClient;
 import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -26,6 +28,18 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+    @Value("${spring.ldap.urls}")
+    String[] ldapUrls;
+    @Value("${spring.ldap.base}")
+    String ldapBase;
+    @Value("${spring.ldap.username}")
+    String ldapUsername;
+    @Value("${spring.ldap.password}")
+    String ldapPassword;
+    @Value("${ldap.user_filter}")
+    String ldapUserFilter;
+    @Value("${ldap.password_attribute}")
+    String ldapPasswordAttribute;
     @Lazy
     @Autowired
     private JwtRequestFilter jwtRequestFilter;
@@ -61,18 +75,24 @@ public class SecurityConfig {
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth
                 .ldapAuthentication()
-                .userDnPatterns("uid={0},ou=people")
-                .groupSearchBase("ou=groups")
+                .userSearchFilter(ldapUserFilter)
                 .contextSource()
-                .url("ldap://localhost:1389/dc=springframework,dc=org")
+                .url(ldapUrls[0] + ldapBase)
+                .managerDn(ldapUsername)
+                .managerPassword(ldapPassword)
                 .and()
                 .passwordCompare()
                 .passwordEncoder(new BCryptPasswordEncoder())
-                .passwordAttribute("userPassword");
+                .passwordAttribute(ldapPasswordAttribute);
     }
 
     @Bean
     public UserDetailsService getUserDetailsService(LdapContextSource ldapContextSource) {
-        return new LdapUserDetailsService(new FilterBasedLdapUserSearch("ou=people,dc=springframework,dc=org", "uid={0}", ldapContextSource));
+        return new LdapUserDetailsService(new FilterBasedLdapUserSearch("", ldapUserFilter, ldapContextSource));
+    }
+
+    @Bean
+    public LdapClient ldapClient(LdapContextSource ldapContextSource) {
+        return LdapClient.builder().contextSource(ldapContextSource).build();
     }
 }

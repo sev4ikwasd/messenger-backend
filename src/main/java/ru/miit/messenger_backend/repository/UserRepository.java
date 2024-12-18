@@ -1,12 +1,13 @@
 package ru.miit.messenger_backend.repository;
 
 import ru.miit.messenger_backend.dto.response.PreKeyBundle;
+import ru.miit.messenger_backend.dto.response.UserInfo;
 import ru.miit.messenger_backend.dto.response.UserVault;
 
 public interface UserRepository {
     int getIdByUid(final String uid);
 
-    //TODO user info
+    UserInfo getUserInfo(final int userId);
 
     PreKeyBundle getPreKeyBundle(final int userId);
 

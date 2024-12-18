@@ -3,11 +3,11 @@ CREATE SCHEMA IF NOT EXISTS messenger;
 CREATE TABLE IF NOT EXISTS messenger.user (
 	id SERIAL PRIMARY KEY NOT NULL,
     uid VARCHAR NOT NULL,
-    last_visited TIMESTAMP NOT NULL,
-    master_password_hash BYTEA NOT NULL,
-    protected_symmetric_key BYTEA NOT NULL,
-    identity_public_key BYTEA NOT NULL,
-    signed_public_key BYTEA NOT NULL
+    last_visited TIMESTAMP,
+    master_password_hash BYTEA,
+    protected_symmetric_key BYTEA,
+    identity_public_key BYTEA,
+    signed_public_key BYTEA
 );
 
 CREATE TABLE IF NOT EXISTS messenger.user_one_time_key (

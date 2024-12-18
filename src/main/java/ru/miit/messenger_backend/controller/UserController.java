@@ -21,8 +21,7 @@ public class UserController {
 
     @GetMapping("/{uid}")
     public ResponseEntity<UserInfo> getUserInfo(@PathVariable String uid) {
-        //TODO
-        return null;
+        return ResponseEntity.ok(userRepository.getUserInfo(userRepository.getIdByUid(uid)));
     }
 
     @GetMapping("/{uid}/bundle")
@@ -32,9 +31,10 @@ public class UserController {
 
     @GetMapping("/vault")
     public ResponseEntity<UserVault> getUserVault(@AuthenticationPrincipal User user) {
-        //TODO id
         return ResponseEntity.ok(userRepository.getUserVault(userRepository.getIdByUid(user.getUid())));
     }
+
+    //TODO registration of new user
 
     //TODO queued messages
 
@@ -42,7 +42,6 @@ public class UserController {
 
     @PostMapping("/create")
     public ResponseEntity<?> createNewUser(@AuthenticationPrincipal User user, @RequestBody VaultUpdate vault) {
-        //TODO id
         userRepository.updateUserVault(userRepository.getIdByUid(user.getUid()), vault.vault());
         return ResponseEntity.ok().build();
     }

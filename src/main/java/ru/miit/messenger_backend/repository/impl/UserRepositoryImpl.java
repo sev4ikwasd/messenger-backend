@@ -1,12 +1,15 @@
 package ru.miit.messenger_backend.repository.impl;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.ldap.core.LdapClient;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import ru.miit.messenger_backend.dto.response.PreKeyBundle;
+import ru.miit.messenger_backend.dto.response.UserInfo;
 import ru.miit.messenger_backend.dto.response.UserVault;
 import ru.miit.messenger_backend.entity.UserDataEntity;
 import ru.miit.messenger_backend.entity.UserEntity;
@@ -14,16 +17,20 @@ import ru.miit.messenger_backend.entity.UserOneTimeKeyEntity;
 import ru.miit.messenger_backend.exception.UserNotFoundByUidException;
 import ru.miit.messenger_backend.repository.UserRepository;
 
+import javax.naming.directory.Attributes;
 import java.util.List;
 import java.util.Map;
 
+import static org.springframework.ldap.query.LdapQueryBuilder.query;
+
 @Repository
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Log
 public class UserRepositoryImpl implements UserRepository {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
+    private final LdapClient ldapClient;
     private final RowMapper<UserEntity> userEntityRowMapper = (rs, rowNum) -> UserEntity.builder()
             .id(rs.getInt("id"))
             .uid(rs.getInt("uid"))
@@ -33,7 +40,6 @@ public class UserRepositoryImpl implements UserRepository {
             .identityPublicKey(rs.getBytes("identity_public_key"))
             .signedPublicKey(rs.getBytes("signed_public_key"))
             .build();
-
     private final RowMapper<UserOneTimeKeyEntity> userOneTimeKeyRowMapper = (rs, rowNum) -> UserOneTimeKeyEntity.builder()
             .id(rs.getInt("id"))
             .userId(rs.getInt("user_id"))
@@ -41,8 +47,6 @@ public class UserRepositoryImpl implements UserRepository {
             .keyNumber(rs.getInt("key_number"))
             .isUsed(rs.getBoolean("is_used"))
             .build();
-
-
     private final RowMapper<UserDataEntity> userDataEntityRowMapper = (rs, rowNum) -> UserDataEntity.builder()
             .id(rs.getInt("id"))
             .userId(rs.getInt("user_id"))
@@ -50,12 +54,38 @@ public class UserRepositoryImpl implements UserRepository {
             .startDatetime(rs.getTimestamp("start_datetime").toLocalDateTime())
             .endDatetime(rs.getTimestamp("end_datetime").toLocalDateTime())
             .build();
+    @Value("${ldap.user_filter}")
+    String ldapUserFilter;
+    @Value("${ldap.user_attribute}")
+    String ldapUserAttribute;
 
     @Override
     public int getIdByUid(String uid) {
-        Integer id = jdbcTemplate.queryForObject("SELECT id FROM messenger.user WHERE uid = :user_uid LIMIT 1", Map.of("user_uid", uid), Integer.class);
-        if (id == null) throw new UserNotFoundByUidException(uid);
+        List<String> uids = ldapClient.search()
+                .query(query()
+                        .filter(ldapUserFilter, uid))
+                .toList((Attributes attrs) -> (String) attrs.get("uid").get());
+        if (uids.isEmpty()) throw new UserNotFoundByUidException(uid);
+        List<Integer> idList = jdbcTemplate.queryForList("SELECT id FROM messenger.user WHERE uid = :user_uid LIMIT 1", Map.of("user_uid", uid), Integer.class);
+        Integer id;
+        if (idList.isEmpty()) {
+            jdbcTemplate.update("INSERT INTO messenger.user (uid) VALUES (:user_uid)", Map.of("user_uid", uid));
+            id = jdbcTemplate.queryForObject("SELECT id FROM messenger.user WHERE uid = :user_uid LIMIT 1", Map.of("user_uid", uid), Integer.class);
+        } else {
+            id = idList.getFirst();
+        }
         return id;
+    }
+
+    @Override
+    public UserInfo getUserInfo(int userId) {
+        String uid = jdbcTemplate.queryForObject("SELECT uid FROM messenger.user WHERE id = :id LIMIT 1", Map.of("id", userId), String.class);
+        String name = ldapClient.search()
+                .query(query()
+                        .filter(ldapUserFilter, uid))
+                .toList((Attributes attrs) -> (String) attrs.get("cn").get())
+                .getFirst();
+        return new UserInfo(name);
     }
 
     @Override
