@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import ru.miit.messenger_backend.domain.User;
+import ru.miit.messenger_backend.dto.request.RegisterUser;
 import ru.miit.messenger_backend.dto.request.VaultUpdate;
 import ru.miit.messenger_backend.dto.response.PreKeyBundle;
 import ru.miit.messenger_backend.dto.response.UserInfo;
@@ -34,15 +35,19 @@ public class UserController {
         return ResponseEntity.ok(userRepository.getUserVault(userRepository.getIdByUid(user.getUid())));
     }
 
-    //TODO registration of new user
-
     //TODO queued messages
 
     //TODO renew one time keys
 
-    @PostMapping("/create")
-    public ResponseEntity<?> createNewUser(@AuthenticationPrincipal User user, @RequestBody VaultUpdate vault) {
+    @PostMapping("/vault")
+    public ResponseEntity<?> updateUserVault(@AuthenticationPrincipal User user, @RequestBody VaultUpdate vault) {
         userRepository.updateUserVault(userRepository.getIdByUid(user.getUid()), vault.vault());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> registerNewUser(@AuthenticationPrincipal User user, @RequestBody RegisterUser registerUser) {
+        userRepository.registerNewUser(user.getUid(), registerUser);
         return ResponseEntity.ok().build();
     }
 }

@@ -8,6 +8,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.ldap.core.LdapClient;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import ru.miit.messenger_backend.dto.request.OneTimeKey;
+import ru.miit.messenger_backend.dto.request.RegisterUser;
 import ru.miit.messenger_backend.dto.response.PreKeyBundle;
 import ru.miit.messenger_backend.dto.response.UserInfo;
 import ru.miit.messenger_backend.dto.response.UserVault;
@@ -134,8 +136,32 @@ public class UserRepositoryImpl implements UserRepository {
             throw new RuntimeException("User not found error");
         }
 
-        jdbcTemplate.update("UPDATE messenger.user_date SET (encrypted_data) VALUES (:data) WHERE id = :user_id",
+        jdbcTemplate.update("UPDATE messenger.user_data SET (encrypted_data) VALUES (:data) WHERE id = :user_id",
                 Map.of("user_id", userId,
                         "data", vaultUpdate));
+    }
+
+    @Override
+    @Transactional
+    public void registerNewUser(String uid, RegisterUser data) {
+        jdbcTemplate.update("INSERT INTO messenger.user (uid, master_password_hash, protected_symmetric_key, identity_public_key, signed_public_key) VALUES (:uid, :last_visited, :master_password_hash, :protected_symmetric_key, :identity_public_key, :signed_public_key)",
+                Map.of("uid", uid,
+                        "master_password_hash", data.masterPasswordHash(),
+                        "protected_symmetric_key", data.protectedSymmetricKey(),
+                        "identity_public_key", data.identityPublicKey(),
+                        "signed_public_key", data.signedPublicKey()));
+
+        int id = getIdByUid(uid);
+
+        jdbcTemplate.update("INSERT INTO messenger.user_data (encrypted_data) VALUES (:encrypted_data)",
+                Map.of("encrypted_data", 0));
+
+        for (OneTimeKey key : data.publicOneTimeKeyList()) {
+            jdbcTemplate.update("INSERT INTO messenger.user_one_time_key (user_id, public_one_time_key, key_number, is_used) VALUES (:user_id, :public_one_time_key, :key_number, :is_used)",
+                    Map.of("user_id", id,
+                            "public_one_time_key", key.key(),
+                            "key_number", key.keyNumber(),
+                            "is_used", false));
+        }
     }
 }

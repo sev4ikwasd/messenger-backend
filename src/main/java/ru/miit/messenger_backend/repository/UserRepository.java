@@ -1,5 +1,6 @@
 package ru.miit.messenger_backend.repository;
 
+import ru.miit.messenger_backend.dto.request.RegisterUser;
 import ru.miit.messenger_backend.dto.response.PreKeyBundle;
 import ru.miit.messenger_backend.dto.response.UserInfo;
 import ru.miit.messenger_backend.dto.response.UserVault;
@@ -13,5 +14,7 @@ public interface UserRepository {
 
     UserVault getUserVault(final int userId);
 
-    void updateUserVault(final int userId, byte[] vaultUpdate);
+    void updateUserVault(final int userId, final byte[] vaultUpdate);
+
+    void registerNewUser(final String uid, final RegisterUser data);
 }
