@@ -11,14 +11,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class UserEntity {
     private int id;
-    private int uid;
+    private String uid;
     private LocalDateTime lastVisited;
     private byte[] masterPasswordHash;
     private byte[] protectedSymmetricKey;
     private byte[] identityPublicKey;
     private byte[] signedPublicKey;
 
-    public UserEntity(int uid, LocalDateTime lastVisited, byte[] masterPasswordHash, byte[] protectedSymmetricKey, byte[] identityPublicKey, byte[] signedPublicKey) {
+    public UserEntity(String uid, LocalDateTime lastVisited, byte[] masterPasswordHash, byte[] protectedSymmetricKey, byte[] identityPublicKey, byte[] signedPublicKey) {
         this.uid = uid;
         this.lastVisited = lastVisited;
         this.masterPasswordHash = masterPasswordHash;

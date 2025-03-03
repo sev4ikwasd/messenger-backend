@@ -35,7 +35,7 @@ public class UserRepositoryImpl implements UserRepository {
     private final LdapClient ldapClient;
     private final RowMapper<UserEntity> userEntityRowMapper = (rs, rowNum) -> UserEntity.builder()
             .id(rs.getInt("id"))
-            .uid(rs.getInt("uid"))
+            .uid(rs.getString("uid"))
             .lastVisited(rs.getTimestamp("last_visited").toLocalDateTime())
             .masterPasswordHash(rs.getBytes("master_password_hash"))
             .protectedSymmetricKey(rs.getBytes("protected_symmetric_key"))
@@ -71,8 +71,8 @@ public class UserRepositoryImpl implements UserRepository {
         List<Integer> idList = jdbcTemplate.queryForList("SELECT id FROM messenger.user WHERE uid = :user_uid LIMIT 1", Map.of("user_uid", uid), Integer.class);
         Integer id;
         if (idList.isEmpty()) {
-            jdbcTemplate.update("INSERT INTO messenger.user (uid) VALUES (:user_uid)", Map.of("user_uid", uid));
-            id = jdbcTemplate.queryForObject("SELECT id FROM messenger.user WHERE uid = :user_uid LIMIT 1", Map.of("user_uid", uid), Integer.class);
+            log.warning("User with uid: " + uid + " not found");
+            throw new UserNotFoundByUidException("User not found error");
         } else {
             id = idList.getFirst();
         }
@@ -80,8 +80,7 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public UserInfo getUserInfo(int userId) {
-        String uid = jdbcTemplate.queryForObject("SELECT uid FROM messenger.user WHERE id = :id LIMIT 1", Map.of("id", userId), String.class);
+    public UserInfo getUserInfo(String uid) {
         String name = ldapClient.search()
                 .query(query()
                         .filter(ldapUserFilter, uid))
@@ -92,9 +91,10 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     @Transactional
-    public PreKeyBundle getPreKeyBundle(int userId) {
-        UserEntity userEntity = jdbcTemplate.queryForObject("SELECT * FROM messenger.user WHERE id = :user_id LIMIT 1", Map.of("user_id", userId), userEntityRowMapper);
-        if (userEntity == null) {
+    public PreKeyBundle getPreKeyBundle(String uid) {
+        int userId = getIdByUid(uid);
+        List<UserEntity> userEntity = jdbcTemplate.query("SELECT * FROM messenger.user WHERE id = :user_id LIMIT 1", Map.of("user_id", userId), userEntityRowMapper);
+        if (userEntity.isEmpty()) {
             log.warning("User with id: " + userId + " not found");
             throw new RuntimeException("User not found error");
         }
@@ -109,29 +109,31 @@ public class UserRepositoryImpl implements UserRepository {
             jdbcTemplate.update("DELETE FROM messenger.user_one_time_key WHERE id = :id",
                     Map.of("id", userOneTimeKeyEntity.getId()));
         }
-        return new PreKeyBundle(userEntity.getIdentityPublicKey(), userEntity.getSignedPublicKey(), oneTimeKey);
+        return new PreKeyBundle(userEntity.getFirst().getIdentityPublicKey(), userEntity.getFirst().getSignedPublicKey(), oneTimeKey);
     }
 
     @Override
-    public UserVault getUserVault(int userId) {
-        UserDataEntity userDataEntity = jdbcTemplate.queryForObject("SELECT * FROM messenger.user_data WHERE id = :user_id",
+    public UserVault getUserVault(String uid) {
+        int userId = getIdByUid(uid);
+        List<UserDataEntity> userDataEntity = jdbcTemplate.query("SELECT * FROM messenger.user_data WHERE id = :user_id",
                 Map.of("user_id", userId), userDataEntityRowMapper);
 
-        if (userDataEntity == null) {
+        if (userDataEntity.isEmpty()) {
             log.warning("User with id: " + userId + " not found");
             throw new RuntimeException("User not found error");
         }
 
-        return new UserVault(userDataEntity.getEncryptedData());
+        return new UserVault(userDataEntity.getFirst().getEncryptedData());
     }
 
     @Override
     @Transactional
-    public void updateUserVault(int userId, byte[] vaultUpdate) {
-        UserDataEntity userDataEntity = jdbcTemplate.queryForObject("SELECT * FROM messenger.user_data WHERE id = :user_id",
+    public void updateUserVault(String uid, byte[] vaultUpdate) {
+        int userId = getIdByUid(uid);
+        List<UserDataEntity> userDataEntity = jdbcTemplate.query("SELECT * FROM messenger.user_data WHERE id = :user_id",
                 Map.of("user_id", userId), userDataEntityRowMapper);
 
-        if (userDataEntity == null) {
+        if (userDataEntity.isEmpty()) {
             log.warning("User with id: " + userId + " not found");
             throw new RuntimeException("User not found error");
         }

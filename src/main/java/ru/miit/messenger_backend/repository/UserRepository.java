@@ -8,13 +8,13 @@ import ru.miit.messenger_backend.dto.response.UserVault;
 public interface UserRepository {
     int getIdByUid(final String uid);
 
-    UserInfo getUserInfo(final int userId);
+    UserInfo getUserInfo(final String uid);
 
-    PreKeyBundle getPreKeyBundle(final int userId);
+    PreKeyBundle getPreKeyBundle(final String uid);
 
-    UserVault getUserVault(final int userId);
+    UserVault getUserVault(final String uid);
 
-    void updateUserVault(final int userId, final byte[] vaultUpdate);
+    void updateUserVault(final String uid, final byte[] vaultUpdate);
 
     void registerNewUser(final String uid, final RegisterUser data);
 }
