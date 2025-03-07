@@ -3,6 +3,8 @@ package ru.miit.messenger_backend.controller;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.ldap.userdetails.LdapUserDetails;
+import org.springframework.security.ldap.userdetails.LdapUserDetailsImpl;
 import org.springframework.web.bind.annotation.*;
 import ru.miit.messenger_backend.domain.User;
 import ru.miit.messenger_backend.dto.request.RegisterUser;
@@ -42,14 +44,14 @@ public class UserController {
     //TODO renew one time keys
 
     @PostMapping("/vault")
-    public ResponseEntity<?> updateUserVault(@AuthenticationPrincipal User user, @RequestBody VaultUpdate vault) {
-        userRepository.updateUserVault(user.getUid(), vault.vault());
+    public ResponseEntity<?> updateUserVault(@AuthenticationPrincipal LdapUserDetails user, @RequestBody VaultUpdate vault) {
+        userRepository.updateUserVault(user.getUsername(), vault.vault());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerNewUser(@AuthenticationPrincipal User user, @RequestBody RegisterUser registerUser) {
-        userRepository.registerNewUser(user.getUid(), registerUser);
+    public ResponseEntity<?> registerNewUser(@AuthenticationPrincipal LdapUserDetails user, @RequestBody RegisterUser registerUser) {
+        userRepository.registerNewUser(user.getUsername(), registerUser);
         return ResponseEntity.ok().build();
     }
 }

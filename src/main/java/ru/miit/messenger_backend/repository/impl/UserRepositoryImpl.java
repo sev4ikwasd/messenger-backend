@@ -146,7 +146,7 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     @Transactional
     public void registerNewUser(String uid, RegisterUser data) {
-        jdbcTemplate.update("INSERT INTO messenger.user (uid, master_password_hash, protected_symmetric_key, identity_public_key, signed_public_key) VALUES (:uid, :last_visited, :master_password_hash, :protected_symmetric_key, :identity_public_key, :signed_public_key)",
+        jdbcTemplate.update("INSERT INTO messenger.user (uid, last_visited, master_password_hash, protected_symmetric_key, identity_public_key, signed_public_key) VALUES (:uid, CURRENT_TIMESTAMP, :master_password_hash, :protected_symmetric_key, :identity_public_key, :signed_public_key)",
                 Map.of("uid", uid,
                         "master_password_hash", data.masterPasswordHash(),
                         "protected_symmetric_key", data.protectedSymmetricKey(),
@@ -155,8 +155,9 @@ public class UserRepositoryImpl implements UserRepository {
 
         int id = getIdByUid(uid);
 
-        jdbcTemplate.update("INSERT INTO messenger.user_data (encrypted_data) VALUES (:encrypted_data)",
-                Map.of("encrypted_data", 0));
+        jdbcTemplate.update("INSERT INTO messenger.user_data (id, encrypted_data) VALUES (:id, :encrypted_data)",
+                Map.of("id", id,
+                        "encrypted_data", new byte[]{}));
 
         for (OneTimeKey key : data.publicOneTimeKeyList()) {
             jdbcTemplate.update("INSERT INTO messenger.user_one_time_key (user_id, public_one_time_key, key_number, is_used) VALUES (:user_id, :public_one_time_key, :key_number, :is_used)",
