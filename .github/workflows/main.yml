@@ -23,9 +23,6 @@ jobs:
       - name: unit tests
         run: ./gradlew test
 
-      - name: build the app
-        run: ./gradlew clean bootJar
-
       - name: build the docker image
         uses: docker/build-push-action@v4
         with:
