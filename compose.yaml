@@ -13,13 +13,6 @@ services:
     profiles:
       - prod
 
-  redis-prod:
-    image: 'redis:latest'
-    ports:
-      - '6379'
-    profiles:
-      - prod
-
 
   # Development containers
   postgres-dev:
@@ -32,13 +25,6 @@ services:
       - '5432:5432'
     volumes:
       - './src/main/resources/db-script/create_script.sql:/docker-entrypoint-initdb.d/init.sql'
-    profiles:
-      - dev
-
-  redis-dev:
-    image: 'redis:latest'
-    ports:
-      - '6379:6379'
     profiles:
       - dev
 

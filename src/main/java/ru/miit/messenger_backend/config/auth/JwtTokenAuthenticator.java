@@ -1,5 +1,6 @@
 package ru.miit.messenger_backend.config.auth;
 
+import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -7,14 +8,10 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
 @Component
+@AllArgsConstructor
 public class JwtTokenAuthenticator {
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
-
-    public JwtTokenAuthenticator(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
-        this.jwtUtil = jwtUtil;
-        this.userDetailsService = userDetailsService;
-    }
 
     public UsernamePasswordAuthenticationToken authenticate(String token) {
         String username = jwtUtil.extractUserName(token);

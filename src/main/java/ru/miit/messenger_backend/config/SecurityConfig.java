@@ -5,13 +5,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.env.Environment;
 import org.springframework.ldap.core.LdapClient;
 import org.springframework.ldap.core.support.LdapContextSource;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -23,13 +26,13 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import ru.miit.messenger_backend.config.auth.JwtRequestFilter;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
-@EnableWebSecurity
 public class SecurityConfig {
     @Value("${spring.ldap.urls}")
-    String[] ldapUrls;
+    String ldapUrl;
     @Value("${spring.ldap.base}")
     String ldapBase;
     @Value("${spring.ldap.username}")
@@ -40,28 +43,43 @@ public class SecurityConfig {
     String ldapUserFilter;
     @Value("${ldap.password_attribute}")
     String ldapPasswordAttribute;
+
+    @Autowired
+    private Environment env;
+
     @Lazy
     @Autowired
     private JwtRequestFilter jwtRequestFilter;
 
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        var authorization = new Customizer<AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry>() {
+            @Override
+            public void customize(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry authorizationManagerRequestMatcherRegistry) {
+                if (Arrays.asList(env.getActiveProfiles()).contains("dev")) {
+                    authorizationManagerRequestMatcherRegistry
+                            .requestMatchers("/swagger-ui/**").permitAll()
+                            .requestMatchers("/v3/api-docs/**").permitAll();
+                }
+                authorizationManagerRequestMatcherRegistry
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
+                        .anyRequest().authenticated();
+            }
+        };
         http
-                .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry ->
-                        authorizationManagerRequestMatcherRegistry
-                                .requestMatchers("/ws/**").permitAll()
-                                .anyRequest().authenticated())
+                .authorizeHttpRequests(authorization)
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(httpSecurityCorsConfigurer -> {
                     CorsConfiguration configuration = new CorsConfiguration();
-                    configuration.setAllowedOrigins(List.of("*"));
+                    configuration.setAllowedOriginPatterns(List.of("*"));
                     configuration.setAllowedMethods(List.of("*"));
                     configuration.setAllowedHeaders(List.of("*"));
                     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                     source.registerCorsConfiguration("/**", configuration);
                     httpSecurityCorsConfigurer.configurationSource(source);
                 })
-                .httpBasic(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(
                         jwtRequestFilter,
@@ -77,7 +95,7 @@ public class SecurityConfig {
                 .ldapAuthentication()
                 .userSearchFilter(ldapUserFilter)
                 .contextSource()
-                .url(ldapUrls[0] + ldapBase)
+                .url(ldapUrl + ldapBase)
                 .managerDn(ldapUsername)
                 .managerPassword(ldapPassword)
                 .and()
@@ -94,5 +112,13 @@ public class SecurityConfig {
     @Bean
     public LdapClient ldapClient(LdapContextSource ldapContextSource) {
         return LdapClient.builder().contextSource(ldapContextSource).build();
+    }
+
+    @Bean
+    AuthenticationManager myAuthenticationManager(UserDetailsService userDetailsService) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(new BCryptPasswordEncoder());
+        return provider::authenticate;
     }
 }

@@ -1,17 +1,17 @@
 package ru.miit.messenger_backend.config;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.data.jdbc.core.convert.JdbcCustomConversions;
+import org.springframework.data.jdbc.repository.config.AbstractJdbcConfiguration;
+import ru.miit.messenger_backend.application.domain.model.MessageStateReadConverter;
+import ru.miit.messenger_backend.application.domain.model.MessageStateWriteConverter;
 
-import javax.sql.DataSource;
+import java.util.List;
 
 @Configuration
-@EnableTransactionManagement
-public class JdbcConfig {
-    @Bean
-    public NamedParameterJdbcTemplate namedParameterJdbcTemplate(DataSource dataSource) {
-        return new NamedParameterJdbcTemplate(dataSource);
+public class JdbcConfig extends AbstractJdbcConfiguration {
+    @Override
+    public JdbcCustomConversions jdbcCustomConversions() {
+        return new JdbcCustomConversions(List.of(new MessageStateWriteConverter(), new MessageStateReadConverter()));
     }
 }
