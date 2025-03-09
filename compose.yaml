@@ -1,21 +1,5 @@
 services:
-  # Production containers
-  postgres-prod:
-    image: 'postgres:latest'
-    environment:
-      - 'POSTGRES_DB=mydatabase'
-      - 'POSTGRES_PASSWORD=secret'
-      - 'POSTGRES_USER=myuser'
-    ports:
-      - '5432'
-    volumes:
-      - './src/main/resources/db-script/create_script.sql:/docker-entrypoint-initdb.d/init.sql'
-    profiles:
-      - prod
-
-
-  # Development containers
-  postgres-dev:
+  postgres:
     image: 'postgres:latest'
     environment:
       - 'POSTGRES_DB=mydatabase'
@@ -25,10 +9,8 @@ services:
       - '5432:5432'
     volumes:
       - './src/main/resources/db-script/create_script.sql:/docker-entrypoint-initdb.d/init.sql'
-    profiles:
-      - dev
 
-  ldap-dev:
+  ldap:
     image: 'bitnami/openldap:latest'
     ports:
       - '1389:1389'
@@ -39,5 +21,12 @@ services:
       - LDAP_ADMIN_PASSWORD=admin
     volumes:
       - ./src/test/resources/ldifs:/ldifs
+
+  application:
+    image: 'rut-miit/messenger'
+    ports:
+      - '8080:8080'
+    environment:
+      - SPRING_PROFILES_ACTIVE=rundev
     profiles:
-      - dev
+      - run

@@ -57,7 +57,8 @@ public class SecurityConfig {
         var authorization = new Customizer<AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry>() {
             @Override
             public void customize(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry authorizationManagerRequestMatcherRegistry) {
-                if (Arrays.asList(env.getActiveProfiles()).contains("dev")) {
+                if (Arrays.asList(env.getActiveProfiles()).contains("dev")
+                        || Arrays.asList(env.getActiveProfiles()).contains("rundev")) {
                     authorizationManagerRequestMatcherRegistry
                             .requestMatchers("/swagger-ui/**").permitAll()
                             .requestMatchers("/v3/api-docs/**").permitAll();
