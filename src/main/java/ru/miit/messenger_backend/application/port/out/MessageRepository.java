@@ -42,9 +42,9 @@ public interface MessageRepository extends CrudRepository<Message, Integer> {
     @Query("SELECT count(*) FROM messenger.message WHERE ou_group = :ou AND (((id_state = 0) AND (id_receiver = :id)) OR (id_receiver <> :id))")
     int getNewUserGroupMessagesSize(int id, String ou);
 
-    @Query("SELECT CASE WHEN count(*) > 1 THEN TRUE ELSE FALSE END FROM messenger.message WHERE id_receiver = :id AND id_sender = :otherUserId AND id_state = 0")
+    @Query("SELECT CASE WHEN count(*) > 0 THEN TRUE ELSE FALSE END FROM messenger.message WHERE id_receiver = :id AND id_sender = :otherUserId AND id_state = 0")
     boolean newUserMessages(int id, int otherUserId);
 
-    @Query("SELECT CASE WHEN count(*) > 1 THEN TRUE ELSE FALSE END FROM messenger.message WHERE id_receiver = :id AND ou_group = :ou AND id_state = 0")
+    @Query("SELECT CASE WHEN count(*) > 0 THEN TRUE ELSE FALSE END FROM messenger.message WHERE id_receiver = :id AND ou_group = :ou AND id_state = 0")
     boolean newGroupMessages(int id, String ou);
 }

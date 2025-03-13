@@ -33,6 +33,19 @@ public class ManageUserHttp {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping("/data")
+    @Operation(summary = "Update user data")
+    ResponseEntity<?> updateUserData(@AuthenticationPrincipal UserDetails user, @RequestBody UpdateUserDataDto updateUserDataDto) {
+        manageUser.updateUserData(user.getUsername(), updateUserDataDto);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/data")
+    @Operation(summary = "Get user data")
+    ResponseEntity<UserDataDto> getUserData(@AuthenticationPrincipal UserDetails user) {
+        return ResponseEntity.ok(manageUser.getUserData(user.getUsername()));
+    }
+
     @PostMapping("/replenish")
     @Operation(summary = "Replenish user keys")
     ResponseEntity<?> addKeys(@AuthenticationPrincipal UserDetails user, @RequestBody AddKeysDto addKeysDto) {
@@ -47,6 +60,12 @@ public class ManageUserHttp {
         return ResponseEntity.ok(manageUser.getUsersInfo(PageRequest.of(page, size)));
     }
 
+    @GetMapping("/{uid}")
+    @Operation(summary = "Get company user info by uid")
+    ResponseEntity<UserInfoDto> getUserInfo(@PathVariable(value = "uid") @Parameter(description = "Uid of user to get info of") String uid) {
+        return ResponseEntity.ok(manageUser.getUserInfo(uid));
+    }
+
     @GetMapping("/bundle/{uid}")
     @Operation(summary = "Get key bundle for user")
     ResponseEntity<UserBundleDto> getUserBundle(@PathVariable(value = "uid") @Parameter(description = "Uid of user to get bundle of") String uid) {
@@ -55,7 +74,7 @@ public class ManageUserHttp {
 
     @GetMapping("/keys")
     @Operation(summary = "Get key status for user")
-    ResponseEntity<OneTimeKeysStatus> getOneTimeKeysStatus(@AuthenticationPrincipal UserDetails user) {
+    ResponseEntity<OneTimeKeysStatusDto> getOneTimeKeysStatus(@AuthenticationPrincipal UserDetails user) {
         return ResponseEntity.ok(manageUser.getOneTimeKeysStatus(user.getUsername()));
     }
 }

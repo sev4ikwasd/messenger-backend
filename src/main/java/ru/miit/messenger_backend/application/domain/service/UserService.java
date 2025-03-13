@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.miit.messenger_backend.application.domain.dto.*;
 import ru.miit.messenger_backend.application.domain.model.LdapUser;
 import ru.miit.messenger_backend.application.domain.model.User;
+import ru.miit.messenger_backend.application.domain.model.UserData;
 import ru.miit.messenger_backend.application.domain.model.UserOneTimeKey;
 import ru.miit.messenger_backend.application.port.in.ManageUser;
 import ru.miit.messenger_backend.application.port.out.LdapRepository;
@@ -45,10 +46,25 @@ public class UserService implements ManageUser {
         if (userRepository.getUserByUid(uid).isPresent())
             throw new BusinessRuleViolationException("User already exists");
         User user = new User(uid, LocalDateTime.now(), registerUserDto.identityPublicKey(), registerUserDto.signedPublicKey(),
+                registerUserDto.masterPasswordHash(), registerUserDto.protectedSymmetricKey(),
                 registerUserDto.oneTimeKeyList().stream()
                         .map(key -> new UserOneTimeKey(key.oneTimeKey(), key.number()))
-                        .collect(Collectors.toSet()));
+                        .collect(Collectors.toSet()),
+                new UserData(registerUserDto.userData()));
         userRepository.save(user);
+    }
+
+    @Override
+    public void updateUserData(String uid, UpdateUserDataDto updateUserDataDto) {
+        User user = getUser(uid);
+        user.updateUserData(updateUserDataDto.userData());
+        userRepository.save(user);
+    }
+
+    @Override
+    public UserDataDto getUserData(String uid) {
+        User user = getUser(uid);
+        return new UserDataDto(user.getUserData().getUserData());
     }
 
     @Override
@@ -58,6 +74,14 @@ public class UserService implements ManageUser {
                 .map(key -> new UserOneTimeKey(key.oneTimeKey(), key.number()))
                 .collect(Collectors.toSet()));
         userRepository.save(user);
+    }
+
+    @Override
+    public UserInfoDto getUserInfo(String uid) {
+        Optional<LdapUser> ldapUser = ldapRepository.getUserByUid(uid);
+        if (ldapUser.isEmpty()) throw new ResourceNotFoundException("User not found");
+        boolean registered = userRepository.getUserByUid(uid).isPresent();
+        return new UserInfoDto(uid, ldapUser.get().getName(), registered);
     }
 
     @Override
@@ -87,10 +111,10 @@ public class UserService implements ManageUser {
     }
 
     @Override
-    public OneTimeKeysStatus getOneTimeKeysStatus(String uid) {
+    public OneTimeKeysStatusDto getOneTimeKeysStatus(String uid) {
         User user = getUser(uid);
 
-        return new OneTimeKeysStatus(user.isRequiresReplenishingKeys(),
+        return new OneTimeKeysStatusDto(user.isRequiresReplenishingKeys(),
                 user.getUserOneTimeKeys().stream()
                         .map(UserOneTimeKey::getKeyNumber)
                         .collect(Collectors.toList()));

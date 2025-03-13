@@ -7,7 +7,9 @@ CREATE TABLE IF NOT EXISTS messenger.user (
     uid VARCHAR NOT NULL UNIQUE,
     last_visited TIMESTAMP NOT NULL,
     identity_public_key BYTEA NOT NULL,
-    signed_public_key BYTEA NOT NULL
+    signed_public_key BYTEA NOT NULL,
+    master_password_hash BYTEA NOT NULL,
+    protected_symmetric_key BYTEA NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS messenger.user_one_time_key (
@@ -16,6 +18,12 @@ CREATE TABLE IF NOT EXISTS messenger.user_one_time_key (
     public_one_time_key BYTEA NOT NULL,
     key_number UUID NOT NULL,
     FOREIGN KEY (id_user) REFERENCES messenger.user (id)
+);
+
+CREATE TABLE IF NOT EXISTS messenger.user_data (
+    id INT PRIMARY KEY,
+    user_data BYTEA NOT NULL,
+    FOREIGN KEY (id) REFERENCES messenger.user (id)
 );
 
 CREATE TABLE IF NOT EXISTS messenger.message_status (

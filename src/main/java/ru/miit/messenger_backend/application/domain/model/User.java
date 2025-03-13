@@ -6,6 +6,7 @@ import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.annotation.Identity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.PersistenceCreator;
+import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.MappedCollection;
 import org.springframework.data.relational.core.mapping.Table;
 import ru.miit.messenger_backend.exception.BusinessRuleViolationException;
@@ -27,13 +28,20 @@ public class User {
     private final LocalDateTime lastVisited;
     private final byte[] identityPublicKey;
     private final byte[] signedPublicKey;
+    private final byte[] masterPasswordHash;
+    private final byte[] protectedSymmetricKey;
     @MappedCollection(idColumn = "id_user")
     private final Set<UserOneTimeKey> userOneTimeKeys;
+    @Column("id")
+    private final UserData userData;
     @Identity
     @Id
     private Integer id;
 
-    public User(String uid, LocalDateTime lastVisited, byte[] identityPublicKey, byte[] signedPublicKey, Set<UserOneTimeKey> userOneTimeKeys) {
+    public User(String uid, LocalDateTime lastVisited, byte[] identityPublicKey, byte[] signedPublicKey, byte[] masterPasswordHash, byte[] protectedSymmetricKey, Set<UserOneTimeKey> userOneTimeKeys, UserData userData) {
+        this.masterPasswordHash = masterPasswordHash;
+        this.protectedSymmetricKey = protectedSymmetricKey;
+        this.userData = userData;
         if (userOneTimeKeys.size() != Constants.USER_MAX_ONE_TIME_KEY_COUNT)
             throw new BusinessRuleViolationException("Incorrect amount of one time keys");
         if (!userOneTimeKeys.stream().map(UserOneTimeKey::getKeyNumber).allMatch(new HashSet<>()::add))
@@ -46,13 +54,16 @@ public class User {
     }
 
     @PersistenceCreator
-    public User(Integer id, String uid, LocalDateTime lastVisited, byte[] identityPublicKey, byte[] signedPublicKey, Set<UserOneTimeKey> userOneTimeKeys) {
+    public User(Integer id, String uid, LocalDateTime lastVisited, byte[] identityPublicKey, byte[] signedPublicKey, byte[] masterPasswordHash, byte[] protectedSymmetricKey, Set<UserOneTimeKey> userOneTimeKeys, UserData userData) {
         this.id = id;
         this.uid = uid;
         this.lastVisited = lastVisited;
         this.identityPublicKey = identityPublicKey;
         this.signedPublicKey = signedPublicKey;
+        this.masterPasswordHash = masterPasswordHash;
+        this.protectedSymmetricKey = protectedSymmetricKey;
         this.userOneTimeKeys = userOneTimeKeys;
+        this.userData = userData;
     }
 
     public boolean isRequiresReplenishingKeys() {
@@ -72,5 +83,9 @@ public class User {
         UserOneTimeKey userOneTimeKey = userOneTimeKeys.iterator().next();
         userOneTimeKeys.remove(userOneTimeKey);
         return Optional.of(userOneTimeKey);
+    }
+
+    public void updateUserData(byte[] userData) {
+        this.userData.setUserData(userData);
     }
 }
