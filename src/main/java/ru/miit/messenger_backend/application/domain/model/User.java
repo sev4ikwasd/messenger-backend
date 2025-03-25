@@ -28,7 +28,6 @@ public class User {
     private final LocalDateTime lastVisited;
     private final byte[] identityPublicKey;
     private final byte[] signedPublicKey;
-    private final byte[] masterPasswordHash;
     private final byte[] protectedSymmetricKey;
     @MappedCollection(idColumn = "id_user")
     private final Set<UserOneTimeKey> userOneTimeKeys;
@@ -38,8 +37,7 @@ public class User {
     @Id
     private Integer id;
 
-    public User(String uid, LocalDateTime lastVisited, byte[] identityPublicKey, byte[] signedPublicKey, byte[] masterPasswordHash, byte[] protectedSymmetricKey, Set<UserOneTimeKey> userOneTimeKeys, UserData userData) {
-        this.masterPasswordHash = masterPasswordHash;
+    public User(String uid, LocalDateTime lastVisited, byte[] identityPublicKey, byte[] signedPublicKey, byte[] protectedSymmetricKey, Set<UserOneTimeKey> userOneTimeKeys, UserData userData) {
         this.protectedSymmetricKey = protectedSymmetricKey;
         this.userData = userData;
         if (userOneTimeKeys.size() != Constants.USER_MAX_ONE_TIME_KEY_COUNT)
@@ -54,13 +52,12 @@ public class User {
     }
 
     @PersistenceCreator
-    public User(Integer id, String uid, LocalDateTime lastVisited, byte[] identityPublicKey, byte[] signedPublicKey, byte[] masterPasswordHash, byte[] protectedSymmetricKey, Set<UserOneTimeKey> userOneTimeKeys, UserData userData) {
+    public User(Integer id, String uid, LocalDateTime lastVisited, byte[] identityPublicKey, byte[] signedPublicKey, byte[] protectedSymmetricKey, Set<UserOneTimeKey> userOneTimeKeys, UserData userData) {
         this.id = id;
         this.uid = uid;
         this.lastVisited = lastVisited;
         this.identityPublicKey = identityPublicKey;
         this.signedPublicKey = signedPublicKey;
-        this.masterPasswordHash = masterPasswordHash;
         this.protectedSymmetricKey = protectedSymmetricKey;
         this.userOneTimeKeys = userOneTimeKeys;
         this.userData = userData;

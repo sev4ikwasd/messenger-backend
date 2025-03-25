@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS messenger.user (
     last_visited TIMESTAMP NOT NULL,
     identity_public_key BYTEA NOT NULL,
     signed_public_key BYTEA NOT NULL,
-    master_password_hash BYTEA NOT NULL,
     protected_symmetric_key BYTEA NOT NULL
 );
 

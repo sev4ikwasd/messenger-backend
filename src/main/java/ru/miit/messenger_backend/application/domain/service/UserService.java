@@ -46,7 +46,7 @@ public class UserService implements ManageUser {
         if (userRepository.getUserByUid(uid).isPresent())
             throw new BusinessRuleViolationException("User already exists");
         User user = new User(uid, LocalDateTime.now(), registerUserDto.identityPublicKey(), registerUserDto.signedPublicKey(),
-                registerUserDto.masterPasswordHash(), registerUserDto.protectedSymmetricKey(),
+                registerUserDto.protectedSymmetricKey(),
                 registerUserDto.oneTimeKeyList().stream()
                         .map(key -> new UserOneTimeKey(key.oneTimeKey(), key.number()))
                         .collect(Collectors.toSet()),
