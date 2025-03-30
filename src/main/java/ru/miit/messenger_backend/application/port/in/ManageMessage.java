@@ -21,7 +21,7 @@ public interface ManageMessage {
 
     Page<MessageDto> getNewGroupMessages(String uid, String ou, Pageable pageable);
 
-    boolean hasNewUserMessages(String uid, String otherUserUid);
+    int newUserMessagesCount(String uid, String otherUserUid);
 
-    boolean hasNewGroupMessages(String uid, String ou);
+    int newGroupMessagesCount(String uid, String ou);
 }

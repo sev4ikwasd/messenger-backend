@@ -64,7 +64,7 @@ public class UserService implements ManageUser {
     @Override
     public UserDataDto getUserData(String uid) {
         User user = getUser(uid);
-        return new UserDataDto(user.getUserData().getUserData());
+        return new UserDataDto(user.getUserData().getUserData(), user.getProtectedSymmetricKey());
     }
 
     @Override

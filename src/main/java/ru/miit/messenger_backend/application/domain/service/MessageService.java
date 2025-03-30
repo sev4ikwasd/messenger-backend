@@ -82,7 +82,7 @@ public class MessageService implements ManageMessage {
                 .map(ldapRepository::getGroupByOu)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .map(group -> new ChatsDto(false, group.getName()))
+                .map(group -> new ChatsDto(false, group.getOu(), group.getName()))
                 .toList());
 
         chatsDtoList.addAll(messageRepository.getUserChats(user.getId()).stream()
@@ -92,7 +92,7 @@ public class MessageService implements ManageMessage {
                 .map(_user -> ldapRepository.getUserByUid(_user.getUid()))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .map(_user -> new ChatsDto(false, _user.getName()))
+                .map(_user -> new ChatsDto(false, _user.getUid(), _user.getName()))
                 .toList());
 
         return Utils.paginate(chatsDtoList, pageable);
@@ -179,16 +179,16 @@ public class MessageService implements ManageMessage {
     }
 
     @Override
-    public boolean hasNewUserMessages(String uid, String otherUserUid) {
+    public int newUserMessagesCount(String uid, String otherUserUid) {
         User receiver = getUser(uid);
         User sender = getUser(otherUserUid);
-        return messageRepository.newUserMessages(receiver.getId(), sender.getId());
+        return messageRepository.getNewUserChatMessagesSize(receiver.getId(), sender.getId());
     }
 
     @Override
-    public boolean hasNewGroupMessages(String uid, String ou) {
+    public int newGroupMessagesCount(String uid, String ou) {
         User receiver = getUser(uid);
         checkUserInGroup(uid, ou);
-        return messageRepository.newGroupMessages(receiver.getId(), ou);
+        return messageRepository.getNewUserGroupMessagesSize(receiver.getId(), ou);
     }
 }

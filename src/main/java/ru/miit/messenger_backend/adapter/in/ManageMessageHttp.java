@@ -73,15 +73,15 @@ public class ManageMessageHttp {
 
     @GetMapping("/user/{uid}/new/count")
     @Operation(summary = "Get new messages of user count")
-    ResponseEntity<Boolean> hasNewUserMessages(@PathVariable(value = "uid") @Parameter(description = "Uid of other user") String uid,
-                                               @AuthenticationPrincipal UserDetails user) {
-        return ResponseEntity.ok(manageMessage.hasNewUserMessages(user.getUsername(), uid));
+    ResponseEntity<Integer> newUserMessagesCount(@PathVariable(value = "uid") @Parameter(description = "Uid of other user") String uid,
+                                                 @AuthenticationPrincipal UserDetails user) {
+        return ResponseEntity.ok(manageMessage.newUserMessagesCount(user.getUsername(), uid));
     }
 
     @GetMapping("/group/{ou}/new/count")
     @Operation(summary = "Get new messages of group count")
-    ResponseEntity<Boolean> hasNewGroupMessages(@PathVariable(value = "ou") @Parameter(description = "ou of group") String ou,
-                                                @AuthenticationPrincipal UserDetails user) {
-        return ResponseEntity.ok(manageMessage.hasNewGroupMessages(user.getUsername(), ou));
+    ResponseEntity<Integer> newGroupMessagesCount(@PathVariable(value = "ou") @Parameter(description = "ou of group") String ou,
+                                                  @AuthenticationPrincipal UserDetails user) {
+        return ResponseEntity.ok(manageMessage.newGroupMessagesCount(user.getUsername(), ou));
     }
 }
