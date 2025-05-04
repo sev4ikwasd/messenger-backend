@@ -136,10 +136,12 @@ public class MessageService implements ManageMessage {
         List<Message> messages = messageRepository.getNewUserChatMessages(user.getId(), otherUser.getId(), pageable.getPageSize(), (int) pageable.getOffset());
 
         messages.forEach(message -> {
-            message.receiveMessage();
-            messageRepository.save(message);
             String senderUid = userRepository.getUserById(message.getIdSender().getId()).get().getUid();
-            simpMessagingTemplate.convertAndSendToUser(senderUid, "/queue/received", new MessageReadNotificationDto(message.getMessageNumber()));
+            if(!senderUid.equals(uid) || user.getId().equals(otherUser.getId())){
+                message.receiveMessage();
+                messageRepository.save(message);
+                simpMessagingTemplate.convertAndSendToUser(senderUid, "/queue/received", new MessageReadNotificationDto(message.getMessageNumber()));
+            }
         });
 
         List<MessageDto> messageDtos = messages.stream()

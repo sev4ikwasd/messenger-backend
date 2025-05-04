@@ -33,7 +33,7 @@ public interface MessageRepository extends CrudRepository<Message, Integer> {
     @Query("SELECT * FROM messenger.message WHERE ou_group IS NULL AND ((id_sender = :id AND id_receiver = :otherUserId) OR (id_sender = :otherUserId AND id_receiver = :id)) AND id_state = 0 ORDER BY time_sent ASC LIMIT :size OFFSET :offset")
     List<Message> getNewUserChatMessages(int id, int otherUserId, int size, int offset);
 
-    @Query("SELECT count(*) FROM messenger.message WHERE ou_group IS NULL AND ((id_sender = :id AND id_receiver = :otherUserId) OR (id_sender = :otherUserId AND id_receiver = :id)) AND id_state = 0")
+    @Query("SELECT count(*) FROM messenger.message WHERE ou_group IS NULL AND (id_sender = :otherUserId AND id_receiver = :id) AND id_state = 0")
     int getNewUserChatMessagesSize(int id, int otherUserId);
 
     @Query("SELECT * FROM messenger.message WHERE ou_group = :ou AND id_state = 0 AND (id_receiver = :id OR id_receiver <> :id) ORDER BY time_sent ASC LIMIT :size OFFSET :offset")
