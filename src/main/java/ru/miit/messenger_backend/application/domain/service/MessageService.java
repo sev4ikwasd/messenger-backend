@@ -9,6 +9,8 @@ import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import ru.miit.messenger_backend.application.domain.dto.*;
+import ru.miit.messenger_backend.application.domain.model.LdapGroup;
+import ru.miit.messenger_backend.application.domain.model.LdapUser;
 import ru.miit.messenger_backend.application.domain.model.Message;
 import ru.miit.messenger_backend.application.domain.model.User;
 import ru.miit.messenger_backend.application.port.in.ManageMessage;
@@ -23,6 +25,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @org.springframework.stereotype.Service
 @RequiredArgsConstructor
@@ -78,22 +81,28 @@ public class MessageService implements ManageMessage {
 
         List<ChatsDto> chatsDtoList = new ArrayList<>();
 
-        chatsDtoList.addAll(messageRepository.getGroupChats(user.getId()).stream()
-                .map(ldapRepository::getGroupByOu)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .map(group -> new ChatsDto(false, group.getOu(), group.getName()))
-                .toList());
-
-        chatsDtoList.addAll(messageRepository.getUserChats(user.getId()).stream()
-                .map(userRepository::getUserById)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .map(_user -> ldapRepository.getUserByUid(_user.getUid()))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .map(_user -> new ChatsDto(false, _user.getUid(), _user.getName()))
-                .toList());
+        chatsDtoList.addAll(messageRepository.getChats(user.getId()).stream()
+                        .flatMap(chat -> {
+                            if(chat.getOuGroup() != null) {
+                                 Optional<LdapGroup> ldapGroupOptional = ldapRepository.getGroupByOu(chat.getOuGroup());
+                                 if (ldapGroupOptional.isPresent()) {
+                                     LdapGroup ldapGroup = ldapGroupOptional.get();
+                                     return Stream.of(new ChatsDto(true, ldapGroup.getOu(), ldapGroup.getName(), chat.getMessage()));
+                                 }
+                            }
+                            else {
+                                Optional<User> userOptional = userRepository.getUserById(chat.getIdUser());
+                                if (userOptional.isPresent()) {
+                                    User _user = userOptional.get();
+                                    Optional<LdapUser> ldapUserOptional = ldapRepository.getUserByUid(_user.getUid());
+                                    if (ldapUserOptional.isPresent()) {
+                                        LdapUser ldapUser = ldapUserOptional.get();
+                                        return Stream.of(new ChatsDto(false, ldapUser.getUid(), ldapUser.getName(), chat.getMessage()));
+                                    }
+                                }
+                            }
+                            return Stream.empty();
+                        }).toList());
 
         return Utils.paginate(chatsDtoList, pageable);
     }
