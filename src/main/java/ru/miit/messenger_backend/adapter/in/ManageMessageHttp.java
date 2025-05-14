@@ -17,6 +17,8 @@ import ru.miit.messenger_backend.application.domain.dto.ChatsDto;
 import ru.miit.messenger_backend.application.domain.dto.MessageDto;
 import ru.miit.messenger_backend.application.port.in.ManageMessage;
 
+import java.util.UUID;
+
 @RestController
 @PrimaryAdapter
 @RequestMapping("/message")
@@ -83,5 +85,23 @@ public class ManageMessageHttp {
     ResponseEntity<Integer> newGroupMessagesCount(@PathVariable(value = "ou") @Parameter(description = "ou of group") String ou,
                                                   @AuthenticationPrincipal UserDetails user) {
         return ResponseEntity.ok(manageMessage.newGroupMessagesCount(user.getUsername(), ou));
+    }
+
+    @PostMapping("/user/{uid}/new/{uuid}")
+    @Operation(summary = "Mark user message as received")
+    ResponseEntity<Void> receiveNewUserMessage(@PathVariable(value = "uid") @Parameter(description = "Uid of other user") String uid,
+                                               @PathVariable(value = "uuid") @Parameter(description = "Number of message") UUID uuid,
+                                               @AuthenticationPrincipal UserDetails user) {
+        manageMessage.markUserMessageReceived(user.getUsername(), uid, uuid);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/group/{ou}/new/{uuid}")
+    @Operation(summary = "Mark group message as received")
+    ResponseEntity<Void> receiveNewGroupMessage(@PathVariable(value = "ou") @Parameter(description = "ou of group") String ou,
+                                                @PathVariable(value = "uuid") @Parameter(description = "Number of message") UUID uuid,
+                                                @AuthenticationPrincipal UserDetails user) {
+        manageMessage.markGroupMessageReceived(user.getUsername(), ou, uuid);
+        return ResponseEntity.ok().build();
     }
 }

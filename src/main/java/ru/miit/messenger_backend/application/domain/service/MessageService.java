@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -177,15 +178,6 @@ public class MessageService implements ManageMessage {
 
         List<Message> messages = messageRepository.getNewUserChatMessages(user.getId(), otherUser.getId(), pageable.getPageSize(), (int) pageable.getOffset());
 
-        messages.forEach(message -> {
-            String senderUid = userRepository.getUserById(message.getIdSender().getId()).get().getUid();
-            if (!senderUid.equals(uid) || user.getId().equals(otherUser.getId())) {
-                message.receiveMessage();
-                messageRepository.save(message);
-                simpMessagingTemplate.convertAndSendToUser(senderUid, "/queue/received", new MessageReadNotificationDto(message.getMessageNumber()));
-            }
-        });
-
         List<MessageDto> messageDtos = messages.stream()
                 .map(message -> {
                     String senderUid = userRepository.getUserById(message.getIdSender().getId()).get().getUid();
@@ -203,13 +195,6 @@ public class MessageService implements ManageMessage {
         checkUserInGroup(uid, ou);
 
         List<Message> messages = messageRepository.getNewUserGroupMessages(user.getId(), ou, pageable.getPageSize(), (int) pageable.getOffset());
-
-        messages.forEach(message -> {
-            message.receiveMessage();
-            messageRepository.save(message);
-            String senderUid = userRepository.getUserById(message.getIdSender().getId()).get().getUid();
-            simpMessagingTemplate.convertAndSendToUser(senderUid, "/queue/received", new MessageReadNotificationDto(message.getMessageNumber()));
-        });
 
         List<MessageDto> messageDtos = messages.stream()
                 .map(message -> {
@@ -234,6 +219,40 @@ public class MessageService implements ManageMessage {
         User receiver = getUser(uid);
         checkUserInGroup(uid, ou);
         return messageRepository.getNewUserGroupMessagesSize(receiver.getId(), ou);
+    }
+
+    @Override
+    public void markUserMessageReceived(String uid, String otherUserUid, UUID messageNumber) {
+        User user = getUser(uid);
+        User otherUser = getUser(otherUserUid);
+
+        List<Message> messages = messageRepository.getAllNewUserChatMessages(user.getId(), otherUser.getId());
+        if (messages.stream().noneMatch(message -> message.getMessageNumber().equals(messageNumber)))
+            throw new BusinessRuleViolationException("Message with given number not found");
+        for (Message message : messages) {
+            message.receiveMessage();
+            messageRepository.save(message);
+            simpMessagingTemplate.convertAndSendToUser(otherUserUid, "/queue/received", new MessageReadNotificationDto(message.getMessageNumber()));
+            if (message.getMessageNumber().equals(messageNumber))
+                break;
+        }
+    }
+
+    @Override
+    public void markGroupMessageReceived(String uid, String ou, UUID messageNumber) {
+        User user = getUser(uid);
+        checkUserInGroup(uid, ou);
+        List<Message> messages = messageRepository.getAllNewUserGroupMessages(user.getId(), ou);
+        if (messages.stream().noneMatch(message -> message.getMessageNumber().equals(messageNumber)))
+            throw new BusinessRuleViolationException("Message with given number not found");
+        for (Message message : messages) {
+            message.receiveMessage();
+            messageRepository.save(message);
+            String senderUid = userRepository.getUserById(message.getIdSender().getId()).get().getUid();
+            simpMessagingTemplate.convertAndSendToUser(senderUid, "/queue/received", new MessageReadNotificationDto(message.getMessageNumber()));
+            if (message.getMessageNumber().equals(messageNumber))
+                break;
+        }
     }
 
     @Data

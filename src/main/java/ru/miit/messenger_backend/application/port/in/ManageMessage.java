@@ -7,6 +7,8 @@ import ru.miit.messenger_backend.application.domain.dto.ChatsDto;
 import ru.miit.messenger_backend.application.domain.dto.MessageDto;
 import ru.miit.messenger_backend.application.domain.dto.SendMessageDto;
 
+import java.util.UUID;
+
 @PrimaryPort
 public interface ManageMessage {
     void sendMessage(String uidSender, SendMessageDto sendMessage);
@@ -24,4 +26,8 @@ public interface ManageMessage {
     int newUserMessagesCount(String uid, String otherUserUid);
 
     int newGroupMessagesCount(String uid, String ou);
+
+    void markUserMessageReceived(String uid, String otherUserUid, UUID messageNumber);
+
+    void markGroupMessageReceived(String uid, String ou, UUID messageNumber);
 }
