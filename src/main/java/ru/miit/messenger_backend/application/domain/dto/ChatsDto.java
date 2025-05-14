@@ -1,4 +1,6 @@
 package ru.miit.messenger_backend.application.domain.dto;
 
-public record ChatsDto(boolean isGroup, String id, String name, byte[] lastMessage) {
+import java.time.LocalDateTime;
+
+public record ChatsDto(boolean isGroup, String id, String name, String sender, byte[] lastMessage, LocalDateTime time) {
 }

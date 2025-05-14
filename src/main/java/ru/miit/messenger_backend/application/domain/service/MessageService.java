@@ -1,5 +1,7 @@
 package ru.miit.messenger_backend.application.domain.service;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.jmolecules.architecture.hexagonal.Application;
 import org.jmolecules.ddd.annotation.Service;
@@ -9,10 +11,7 @@ import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import ru.miit.messenger_backend.application.domain.dto.*;
-import ru.miit.messenger_backend.application.domain.model.LdapGroup;
-import ru.miit.messenger_backend.application.domain.model.LdapUser;
-import ru.miit.messenger_backend.application.domain.model.Message;
-import ru.miit.messenger_backend.application.domain.model.User;
+import ru.miit.messenger_backend.application.domain.model.*;
 import ru.miit.messenger_backend.application.port.in.ManageMessage;
 import ru.miit.messenger_backend.application.port.out.LdapRepository;
 import ru.miit.messenger_backend.application.port.out.MessageRepository;
@@ -25,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @org.springframework.stereotype.Service
@@ -79,32 +79,65 @@ public class MessageService implements ManageMessage {
     public Page<ChatsDto> getChats(String uid, Pageable pageable) {
         User user = getUser(uid);
 
-        List<ChatsDto> chatsDtoList = new ArrayList<>();
+        List<ChatsServiceDto> chatsServiceDtoList = new ArrayList<>();
 
-        chatsDtoList.addAll(messageRepository.getChats(user.getId()).stream()
-                        .flatMap(chat -> {
-                            if(chat.getOuGroup() != null) {
-                                 Optional<LdapGroup> ldapGroupOptional = ldapRepository.getGroupByOu(chat.getOuGroup());
-                                 if (ldapGroupOptional.isPresent()) {
-                                     LdapGroup ldapGroup = ldapGroupOptional.get();
-                                     return Stream.of(new ChatsDto(true, ldapGroup.getOu(), ldapGroup.getName(), chat.getMessage()));
-                                 }
+        for (Chat chat : messageRepository.getChats(user.getId())) {
+            Optional<ChatsServiceDto> existingChat = chatsServiceDtoList.stream().filter(chatsServiceDto ->
+                            ((chatsServiceDto.getReceiverId() == chat.getIdReceiver()) && (chatsServiceDto.getSenderId() == chat.getIdSender()))
+                                    || ((chatsServiceDto.getReceiverId() == chat.getIdSender()) && (chatsServiceDto.getSenderId() == chat.getIdReceiver())))
+                    .findAny();
+            if (existingChat.isPresent()) {
+                if (existingChat.get().getTimeSent().isBefore(chat.getTimeSent())) {
+                    existingChat.get().setSenderId(chat.getIdSender());
+                    existingChat.get().setReceiverId(chat.getIdReceiver());
+                    existingChat.get().setOuGroup(chat.getOuGroup());
+                    existingChat.get().setMessage(chat.getMessage());
+                    existingChat.get().setTimeSent(chat.getTimeSent());
+                }
+            } else {
+                chatsServiceDtoList.add(new ChatsServiceDto(chat.getOuGroup(), chat.getIdSender(), chat.getIdReceiver(), chat.getMessage(), chat.getTimeSent()));
+            }
+        }
+
+        return Utils.paginate(chatsServiceDtoList.stream()
+                .flatMap(chatsServiceDto -> {
+                    if (chatsServiceDto.getOuGroup() != null) {
+                        Optional<LdapGroup> ldapGroupOptional = ldapRepository.getGroupByOu(chatsServiceDto.getOuGroup());
+                        if (ldapGroupOptional.isPresent()) {
+                            LdapGroup ldapGroup = ldapGroupOptional.get();
+                            Optional<User> senderOptional = userRepository.getUserById(chatsServiceDto.getSenderId());
+                            if (senderOptional.isPresent()) {
+                                User sender = senderOptional.get();
+                                Optional<LdapUser> ldapSenderOptional = ldapRepository.getUserByUid(sender.getUid());
+                                if (ldapSenderOptional.isPresent()) {
+                                    LdapUser ldapSender = ldapSenderOptional.get();
+                                    return Stream.of(new ChatsDto(true, ldapGroup.getOu(), ldapGroup.getName(), ldapSender.getName(), chatsServiceDto.getMessage(), chatsServiceDto.getTimeSent()));
+                                }
                             }
-                            else {
-                                Optional<User> userOptional = userRepository.getUserById(chat.getIdUser());
-                                if (userOptional.isPresent()) {
-                                    User _user = userOptional.get();
-                                    Optional<LdapUser> ldapUserOptional = ldapRepository.getUserByUid(_user.getUid());
-                                    if (ldapUserOptional.isPresent()) {
-                                        LdapUser ldapUser = ldapUserOptional.get();
-                                        return Stream.of(new ChatsDto(false, ldapUser.getUid(), ldapUser.getName(), chat.getMessage()));
+                        }
+                    } else {
+                        int otherUserId = chatsServiceDto.getSenderId() == user.getId() ? chatsServiceDto.getReceiverId() : chatsServiceDto.getSenderId();
+                        Optional<User> userOptional = userRepository.getUserById(otherUserId);
+                        if (userOptional.isPresent()) {
+                            User _user = userOptional.get();
+                            Optional<LdapUser> ldapUserOptional = ldapRepository.getUserByUid(_user.getUid());
+                            if (ldapUserOptional.isPresent()) {
+                                LdapUser ldapUser = ldapUserOptional.get();
+                                Optional<User> senderOptional = userRepository.getUserById(chatsServiceDto.getSenderId());
+                                if (senderOptional.isPresent()) {
+                                    User sender = senderOptional.get();
+                                    Optional<LdapUser> ldapSenderOptional = ldapRepository.getUserByUid(sender.getUid());
+                                    if (ldapSenderOptional.isPresent()) {
+                                        LdapUser ldapSender = ldapSenderOptional.get();
+                                        return Stream.of(new ChatsDto(false, ldapUser.getUid(), ldapUser.getName(), ldapSender.getName(), chatsServiceDto.getMessage(), chatsServiceDto.getTimeSent()));
                                     }
                                 }
                             }
-                            return Stream.empty();
-                        }).toList());
-
-        return Utils.paginate(chatsDtoList, pageable);
+                        }
+                    }
+                    return Stream.empty();
+                })
+                .collect(Collectors.toList()), pageable);
     }
 
     @Override
@@ -146,7 +179,7 @@ public class MessageService implements ManageMessage {
 
         messages.forEach(message -> {
             String senderUid = userRepository.getUserById(message.getIdSender().getId()).get().getUid();
-            if(!senderUid.equals(uid) || user.getId().equals(otherUser.getId())){
+            if (!senderUid.equals(uid) || user.getId().equals(otherUser.getId())) {
                 message.receiveMessage();
                 messageRepository.save(message);
                 simpMessagingTemplate.convertAndSendToUser(senderUid, "/queue/received", new MessageReadNotificationDto(message.getMessageNumber()));
@@ -201,5 +234,15 @@ public class MessageService implements ManageMessage {
         User receiver = getUser(uid);
         checkUserInGroup(uid, ou);
         return messageRepository.getNewUserGroupMessagesSize(receiver.getId(), ou);
+    }
+
+    @Data
+    @AllArgsConstructor
+    private static class ChatsServiceDto {
+        private String ouGroup;
+        private int senderId;
+        private int receiverId;
+        private byte[] message;
+        private LocalDateTime timeSent;
     }
 }
