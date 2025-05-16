@@ -14,9 +14,13 @@ import java.util.List;
 @SecondaryPort
 public interface MessageRepository extends CrudRepository<Message, Integer> {
     @Query("""
-            SELECT DISTINCT ON (id_sender, id_receiver) id_sender, id_receiver, message, ou_group, time_sent
-            FROM messenger.message
-            WHERE id_sender = :id OR id_receiver = :id""")
+            SELECT * FROM (
+            	SELECT DISTINCT ON (id_sender, id_receiver) id_sender, id_receiver, message, ou_group, time_sent
+            	FROM messenger.message\s
+            	WHERE id_sender = :id OR id_receiver = :id
+            	ORDER BY id_sender, id_receiver, time_sent DESC
+            ) t
+            ORDER BY time_sent DESC""")
     List<Chat> getChats(int id);
 
     @Query("SELECT * FROM messenger.message WHERE ou_group IS NULL AND ((id_sender = :id AND id_receiver = :otherUserId) OR (id_sender = :otherUserId AND id_receiver = :id)) AND (((id_state = 1) AND (id_receiver = :id)) OR (id_receiver <> :id)) ORDER BY time_sent DESC LIMIT :size OFFSET :offset")
