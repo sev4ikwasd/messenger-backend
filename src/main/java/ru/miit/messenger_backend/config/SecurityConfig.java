@@ -16,7 +16,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.ldap.search.FilterBasedLdapUserSearch;
 import org.springframework.security.ldap.userdetails.LdapUserDetailsService;
@@ -107,7 +109,8 @@ public class SecurityConfig {
 
     @Bean
     public UserDetailsService getUserDetailsService(LdapContextSource ldapContextSource) {
-        return new LdapUserDetailsService(new FilterBasedLdapUserSearch("", ldapUserFilter, ldapContextSource));
+        LdapUserDetailsService service = new LdapUserDetailsService(new FilterBasedLdapUserSearch("", ldapUserFilter, ldapContextSource));
+        return username -> service.loadUserByUsername(username.trim());
     }
 
     @Bean
